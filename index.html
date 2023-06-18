@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lista de Filmes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"], button {
+      padding: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lista de Filmes</h1>
+
+    <form id="form-filme">
+      <input type="text" id="titulo" placeholder="Título" required>
+      <input type="text" id="diretor" placeholder="Diretor" required>
+      <input type="text" id="genero" placeholder="Gênero" required>
+      <button type="submit">Adicionar</button>
+    </form>
+
+    <table id="filmes-table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Diretor</th>
+          <th>Gênero</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function setToken(token) {
+      localStorage.setItem('token', token);
+    }
+
+    function removeToken() {
+      localStorage.removeItem('token');
+    }
+
+    function getFilmes() {
+      const tableBody = document.querySelector('#filmes-table tbody');
+
+      fetch('/filmes', {
+        headers: {
+          'Authorization': 'Bearer ' + getToken()
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        tableBody.innerHTML = '';
+
+        data.forEach(filme => {
+          const row = document.createElement('tr');
+
+          const tituloCell = document.createElement('td');
+          tituloCell.textContent = filme.titulo;
+          row.appendChild(tituloCell);
+
+          const diretorCell = document.createElement('td');
+          diretorCell.textContent = filme.diretor;
+          row.appendChild(diretorCell);
+
+          const generoCell = document.createElement('td');
+          generoCell.textContent = filme.genero;
+          row.appendChild(generoCell);
+
+          tableBody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    }
+
+    function addFilme(titulo, diretor, genero) {
+      fetch('/filmes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken()
+        },
+        body: JSON.stringify({ titulo, diretor, genero })
+      })
+      .then(response => {
+        if (response.ok) {
+          getFilmes();
+        } else {
+          console.error('Erro ao adicionar filme.');
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    }
+
+    document.querySelector('#form-filme').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const titulo = document.querySelector('#titulo').value;
+      const diretor = document.querySelector('#diretor').value;
+      const genero = document.querySelector('#genero').value;
+
+      addFilme(titulo, diretor, genero);
+    });
+
+    // Autenticação
+    function login(username, password) {
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        setToken(data.token);
+        getFilmes();
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    }
+
+    // Exemplo de login para teste
+    login('admin', '123456');
+  </script>
+</body>
+</html>
